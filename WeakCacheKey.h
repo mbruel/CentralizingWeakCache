@@ -23,7 +23,7 @@ private:
 
 
 WeakCacheKey::WeakCacheKey(const QSharedPointer<SharedObject> &sharedPtr)
-    :_weakPtr(sharedPtr.toWeakRef()), _hashCode()
+    :_weakPtr(sharedPtr.toWeakRef()), _hashCode(0)
 {}
 
 

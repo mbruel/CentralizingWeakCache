@@ -20,9 +20,7 @@ QSharedPointer<SharedObject> CentralizingWeakCache::getCentralizedValue(const QS
     {
         centralizedValue = sharedPtr;
         _cache.insert(key, centralizedValue.toWeakRef());
-        centralizedValue->_key = key;
-        connect(centralizedValue.data(), &SharedObject::destroyed,
-                this, &CentralizingWeakCache::handleSharedObjectDestruction, Qt::DirectConnection);
+        centralizedValue->setCacheKey(this, key);
         qDebug() << "[CentralizingWeakCache::getCentralizedValue] adding new value in cache : " << centralizedValue->_value;
     }
     else
@@ -31,16 +29,16 @@ QSharedPointer<SharedObject> CentralizingWeakCache::getCentralizedValue(const QS
     return centralizedValue;
 }
 
+void CentralizingWeakCache::remove(const QSharedPointer<WeakCacheKey> &key)
+{
+    QMutexLocker locker(&_mutex);
+    int res = _cache.remove(key);
+    qDebug() << "[CentralizingWeakCache::handleSharedObjectDestruction] removing centralized value: " << res;
+}
+
 int CentralizingWeakCache::size() const
 {
     QMutexLocker locker(&_mutex);
     return _cache.size();
 }
 
-void CentralizingWeakCache::handleSharedObjectDestruction(QSharedPointer<WeakCacheKey> key)
-{
-    QMutexLocker locker(&_mutex);
-    int res = _cache.remove(key);
-    qDebug() << "[CentralizingWeakCache::handleSharedObjectDestruction] removing centralized value: " << res;
-
-}

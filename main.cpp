@@ -19,7 +19,6 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-
     MainObject *obj1 = new MainObject(new SharedObject("Object 1")),
             *obj1bis = new MainObject(new SharedObject("Object 1"));
 

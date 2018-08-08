@@ -22,20 +22,16 @@ inline uint qHash(WeakCacheKey * cacheKey)
     return cacheKey->_hashCode;
 }
 
-class CentralizingWeakCache : public QObject
+class CentralizingWeakCache
 {
-    Q_OBJECT
 
 public:
     CentralizingWeakCache();
     ~CentralizingWeakCache() = default;
 
     QSharedPointer<SharedObject> getCentralizedValue(const QSharedPointer<SharedObject> &sharedPtr);
-
+    void remove(const QSharedPointer<WeakCacheKey> &key);
     int size() const;
-
-public slots:
-    void handleSharedObjectDestruction(QSharedPointer<WeakCacheKey> key);
 
 private:
     QHash<QSharedPointer<WeakCacheKey>, QWeakPointer<SharedObject>> _cache;

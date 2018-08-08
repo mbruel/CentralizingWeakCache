@@ -1,39 +1,33 @@
 #ifndef SHAREDOBJECT_H
 #define SHAREDOBJECT_H
 
-#include <QObject>
 #include <QSharedPointer>
 #include <QDebug>
 
 class WeakCacheKey;
+class CentralizingWeakCache;
 
-class SharedObject : public QObject
+class SharedObject
 {
-    Q_OBJECT
-
 public:
     friend uint qHash(const SharedObject &  cacheKey);
-    friend class CentralizingWeakCache;
+    friend class CentralizingWeakCache; // to set the cache and the key
 
-    explicit SharedObject(const QString &val)
-        :_value(val), _key() {}
+    explicit SharedObject(const QString &val);
 
-    virtual ~SharedObject()
-    {
-        qDebug() << "[SharedObject::~SharedObject] destroying " << _value;
-        if (!_key.isNull())
-            emit destroyed(_key);
-    }
+    virtual ~SharedObject();
 
-    virtual bool operator==(const SharedObject &other) {return _value == other._value;}
-
-signals:
-    void destroyed(QSharedPointer<WeakCacheKey> key);
+    virtual bool operator==(const SharedObject &other);
 
 private:
-    QString _value;
+    //used by the CentralizingWeakCache
+    void setCacheKey(CentralizingWeakCache *cache, const QSharedPointer<WeakCacheKey> &key);
 
+private:
+    QString                      _value;
+    CentralizingWeakCache       *_cache;
     QSharedPointer<WeakCacheKey> _key;
+
 };
 
 

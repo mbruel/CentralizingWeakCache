@@ -16,7 +16,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-    CentralizingWeakCache.cpp
+    CentralizingWeakCache.cpp \
+    SharedObject.cpp
 
 HEADERS += \
     CentralizingWeakCache.h \
