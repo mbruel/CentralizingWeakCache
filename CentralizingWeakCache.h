@@ -1,6 +1,6 @@
 #ifndef CENTRALIZINGWEAKCACHE_H
 #define CENTRALIZINGWEAKCACHE_H
-
+#include <QMutexLocker>
 #include <QHash>
 #include "SharedObject.h"
 #include "WeakCacheKey.h"
@@ -39,6 +39,7 @@ public slots:
 
 private:
     QHash<QSharedPointer<WeakCacheKey>, QWeakPointer<SharedObject>> _cache;
+    mutable QMutex                                                  _mutex;
 };
 
 
