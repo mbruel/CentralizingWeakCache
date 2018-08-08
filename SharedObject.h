@@ -14,7 +14,6 @@ public:
     friend class CentralizingWeakCache; // to set the cache and the key
 
     explicit SharedObject(const QString &val);
-
     virtual ~SharedObject();
 
     virtual bool operator==(const SharedObject &other);
@@ -22,6 +21,7 @@ public:
 private:
     //used by the CentralizingWeakCache
     void setCacheKey(CentralizingWeakCache *cache, const QSharedPointer<WeakCacheKey> &key);
+
 
 private:
     QString                      _value;
