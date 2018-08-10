@@ -9,6 +9,11 @@ CentralizingWeakCache::CentralizingWeakCache(ushort nbOfObsoleteKeysThatSchedule
 {
 }
 
+CentralizingWeakCache::~CentralizingWeakCache()
+{
+    delete[] _obsoleteKeys;
+}
+
 QSharedPointer<SharedObject> CentralizingWeakCache::getCentralizedValue(const QSharedPointer<SharedObject> &sharedPtr)
 {
     QSharedPointer<SharedObject> centralizedValue;

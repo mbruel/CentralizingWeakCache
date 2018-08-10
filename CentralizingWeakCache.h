@@ -50,7 +50,7 @@ class CentralizingWeakCache
 
 public:
     CentralizingWeakCache(ushort nbOfObsoleteKeysThatScheduleCleanUp = sDefaultNumberOfObsoleteKeysThatScheduleCleanUp);
-    ~CentralizingWeakCache() = default;
+    ~CentralizingWeakCache();
 
     QSharedPointer<SharedObject> getCentralizedValue(const QSharedPointer<SharedObject> &sharedPtr);
     void remove(const QSharedPointer<WeakCacheKey> &key);
