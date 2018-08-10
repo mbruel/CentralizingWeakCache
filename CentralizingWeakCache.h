@@ -1,7 +1,8 @@
 #ifndef CENTRALIZINGWEAKCACHE_H
 #define CENTRALIZINGWEAKCACHE_H
-#include <QMutexLocker>
+#include <QReadWriteLock>
 #include <QHash>
+#include <QStack>
 #include "SharedObject.h"
 #include "WeakCacheKey.h"
 
@@ -48,7 +49,7 @@ class CentralizingWeakCache
 {
 
 public:
-    CentralizingWeakCache();
+    CentralizingWeakCache(ushort nbOfObsoleteKeysThatScheduleCleanUp = sDefaultNumberOfObsoleteKeysThatScheduleCleanUp);
     ~CentralizingWeakCache() = default;
 
     QSharedPointer<SharedObject> getCentralizedValue(const QSharedPointer<SharedObject> &sharedPtr);
@@ -56,8 +57,17 @@ public:
     int size() const;
 
 private:
+    void _cleanUpCache();
+
+private:
     QHash<QSharedPointer<WeakCacheKey>, QWeakPointer<SharedObject>> _cache;
-    mutable QMutex                                                  _mutex;
+    mutable QReadWriteLock                                          _secureCache;
+    QSharedPointer<WeakCacheKey>                                   *_obsoleteKeys; //!< this will be a C array
+    ushort                                                          _nextObsoleteKeyIndex;
+    QReadWriteLock                                                  _secureOsoleteStack;
+    ushort                                                          _sizeMaxOfObsoleteStack;
+
+    static const ushort sDefaultNumberOfObsoleteKeysThatScheduleCleanUp = 1024;
 };
 
 

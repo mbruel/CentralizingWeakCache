@@ -2,8 +2,10 @@
 
 #include "CentralizingWeakCache.h"
 #include "SharedObject.h"
+#include <QDebug>
 
-static  CentralizingWeakCache cache;
+static  ushort                nbDistinctElem = 10;
+static  CentralizingWeakCache cache(3);
 
 class MainObject{
 public:
@@ -14,23 +16,34 @@ private:
 };
 
 
-#include <QDebug>
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    MainObject *obj1 = new MainObject(new SharedObject("Object 1")),
-            *obj1bis = new MainObject(new SharedObject("Object 1"));
+    QVector<QSharedPointer<MainObject>> mainObjects(nbDistinctElem);
+    for (ushort i = 0 ; i < nbDistinctElem ; i++)
+        mainObjects[i] = QSharedPointer<MainObject>(new MainObject(new SharedObject(QString("Object %1").arg(i))));
 
-    qDebug() << "[main] cache size after inserting two same instance: " << cache.size();
+    qDebug() << "[main] cache size after inserting first " << nbDistinctElem << " distinct instances: " << cache.size();
+    Q_ASSERT(cache.size() == nbDistinctElem);
 
-    delete obj1;
+    QVector<QSharedPointer<MainObject>> mainObjectsBis(nbDistinctElem);
+    for (ushort i = 0 ; i < nbDistinctElem ; i++)
+        mainObjectsBis[i] = QSharedPointer<MainObject>(new MainObject(new SharedObject(QString("Object %1").arg(i))));
 
-    qDebug() << "[main] cache size after deleting 1 instance: " << cache.size();
+    qDebug() << "[main] cache size after inserting clones : " << cache.size();
+    Q_ASSERT(cache.size() == nbDistinctElem);
 
-    delete obj1bis;
+    for (ushort i = 0 ; i < 7 ; i++)
+        mainObjectsBis.pop_front();
 
-    qDebug() << "[main] cache size after deleting both instance: " << cache.size();
+    qDebug() << "[main] cache size after removing first 7 clones : " << cache.size();
+    Q_ASSERT(cache.size() == 10);
+
+
+    mainObjects.clear();
+    qDebug() << "[main] cache size after deleting all first mainObjects : " << cache.size();
+    Q_ASSERT(cache.size() == 4); // 3 should be left in the Cache with one in the ObsoleteKey
 
     return a.exec();
 }
