@@ -19,9 +19,8 @@ QSharedPointer<SharedObject> CentralizingWeakCache::getCentralizedValue(const QS
     QSharedPointer<SharedObject> centralizedValue;
     QSharedPointer<WeakCacheKey> key(new WeakCacheKey(sharedPtr));
 
-    _secureCache.lockForRead();
+    QWriteLocker lockCache(&_secureCache);
     QWeakPointer<SharedObject> cachedWeakPtr = _cache.value(key, QWeakPointer<SharedObject>());
-    _secureCache.unlock();
     if (!cachedWeakPtr.isNull())
         centralizedValue = cachedWeakPtr.toStrongRef();
 
@@ -30,8 +29,6 @@ QSharedPointer<SharedObject> CentralizingWeakCache::getCentralizedValue(const QS
         centralizedValue = sharedPtr;
         centralizedValue->setCacheKey(this, key);
         qDebug() << "[CentralizingWeakCache::getCentralizedValue] adding new value in cache : " << centralizedValue->_value;
-
-        QWriteLocker lockCache(&_secureCache);
         _cache.insert(key, centralizedValue.toWeakRef());                
     }
     else
@@ -42,17 +39,12 @@ QSharedPointer<SharedObject> CentralizingWeakCache::getCentralizedValue(const QS
 
 void CentralizingWeakCache::remove(const QSharedPointer<WeakCacheKey> &key)
 {
-    _secureOsoleteStack.lockForWrite();
+    QWriteLocker lockStack(&_secureOsoleteStack);
     _obsoleteKeys[_nextObsoleteKeyIndex++] = key;
-    if (_nextObsoleteKeyIndex == _sizeMaxOfObsoleteStack)
-    {
-        _secureOsoleteStack.unlock();
-        _cleanUpCache();
-    }
-    else
-        _secureOsoleteStack.unlock();
+    qDebug() << "[CentralizingWeakCache::handleSharedObjectDestruction] add key in _obsoleteKeys, size: " << _nextObsoleteKeyIndex;
 
-    qDebug() << "[CentralizingWeakCache::handleSharedObjectDestruction] schedule removal";
+    if (_nextObsoleteKeyIndex == _sizeMaxOfObsoleteStack)
+        _cleanUpCache();
 }
 
 int CentralizingWeakCache::size() const
@@ -65,7 +57,6 @@ void CentralizingWeakCache::_cleanUpCache()
 {
     qDebug() << "[CentralizingWeakCache::_cleanUpCache] cleanUp: we've " << _sizeMaxOfObsoleteStack << " obsolete keys...";
     QWriteLocker lockCache(&_secureCache);
-    QWriteLocker lockStack(&_secureOsoleteStack); // write lock cause we will "unlink" its data (_nextObsoleteKeyIndex back to 0)
     for (ushort idx = 0; idx < _sizeMaxOfObsoleteStack ; ++idx)
          _cache.remove(_obsoleteKeys[idx]);
 
