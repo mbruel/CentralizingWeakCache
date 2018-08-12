@@ -22,4 +22,5 @@ SOURCES += \
 HEADERS += \
     CentralizingWeakCache.h \
     SharedObject.h \
-    WeakCacheKey.h
+    WeakCacheKey.h \
+    Singleton.h

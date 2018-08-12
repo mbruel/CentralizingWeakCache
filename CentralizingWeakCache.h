@@ -5,25 +5,29 @@
 #include <QStack>
 #include "SharedObject.h"
 #include "WeakCacheKey.h"
+#include "Singleton.h"
 
+using ObjPtr     = QSharedPointer<SharedObject>;
+using ObjWeakPtr = QWeakPointer<SharedObject>;
+using KeyPtr     = QSharedPointer<WeakCacheKey>;
 
 inline uint qHash(const SharedObject & sharedObject)
 {
-    return qHash(sharedObject._value);
+    return sharedObject._mass;
 }
 
 inline uint qHash(WeakCacheKey * cacheKey)
 {
     if (!cacheKey->_hashComputed && !cacheKey->_weakPtr.isNull())
     {
-        QSharedPointer<SharedObject> sharedPtr = cacheKey->_weakPtr.toStrongRef();
+        ObjPtr sharedPtr = cacheKey->_weakPtr.toStrongRef();
         if (!sharedPtr.isNull())
             cacheKey->setComputedHashCode(qHash(*(sharedPtr.data()))); // save the hashCode
     }
     return cacheKey->_hashCode;
 }
 
-inline bool operator ==(const QSharedPointer<WeakCacheKey> &left, const QSharedPointer<WeakCacheKey> &right)
+inline bool operator ==(const KeyPtr &left, const KeyPtr &right)
 {
     // check if weakPtrs are null (same state)
     bool isNull = left->_weakPtr.isNull(), otherIsNull = right->_weakPtr.isNull();
@@ -33,7 +37,7 @@ inline bool operator ==(const QSharedPointer<WeakCacheKey> &left, const QSharedP
         return true;
 
     // both weakPtrs are not null, lets get sharedPtrs
-    QSharedPointer<SharedObject> ptr = left->_weakPtr.toStrongRef(),
+    ObjPtr ptr = left->_weakPtr.toStrongRef(),
             otherPtr =   right->_weakPtr.toStrongRef();
     isNull = ptr.isNull(), otherIsNull = otherPtr.isNull();
     if ( (isNull && !otherIsNull) || (!isNull && otherIsNull))
@@ -45,30 +49,42 @@ inline bool operator ==(const QSharedPointer<WeakCacheKey> &left, const QSharedP
     return *ptr == *otherPtr;
 }
 
-class CentralizingWeakCache
+class CentralizingWeakCache : public Singleton<CentralizingWeakCache>
 {
 
 public:
-    CentralizingWeakCache(ushort nbOfObsoleteKeysThatScheduleCleanUp = sDefaultNumberOfObsoleteKeysThatScheduleCleanUp);
+    friend class Singleton<CentralizingWeakCache>;
+
     ~CentralizingWeakCache();
 
-    QSharedPointer<SharedObject> getCentralizedValue(const QSharedPointer<SharedObject> &sharedPtr);
-    void remove(const QSharedPointer<WeakCacheKey> &key);
+    ObjPtr getCentralizedValue(const ObjPtr &sharedPtr);
+    void remove(const KeyPtr &key);
     int size() const;
+
+    void dump(const QString &msg = "");
+    inline void setSizeMaxOfObsoleteStack(ushort nb);
+
 
 private:
     void _cleanUpCache();
+    CentralizingWeakCache(ushort nbOfObsoleteKeysThatScheduleCleanUp = sDefaultNumberOfObsoleteKeysThatScheduleCleanUp);
+
 
 private:
-    QHash<QSharedPointer<WeakCacheKey>, QWeakPointer<SharedObject>> _cache;
-    mutable QReadWriteLock                                          _secureCache;
-    QSharedPointer<WeakCacheKey>                                   *_obsoleteKeys; //!< this will be a C array
-    ushort                                                          _nextObsoleteKeyIndex;
-    QReadWriteLock                                                  _secureOsoleteStack;
-    ushort                                                          _sizeMaxOfObsoleteStack;
+    QHash<KeyPtr, ObjWeakPtr> _cache;
+    mutable QReadWriteLock    _secureCache;
+    KeyPtr                   *_obsoleteKeys; //!< this will be a C array
+    ushort                    _nextObsoleteKeyIndex;
+    QReadWriteLock            _secureOsoleteStack;
+    ushort                    _sizeMaxOfObsoleteStack;
 
     static const ushort sDefaultNumberOfObsoleteKeysThatScheduleCleanUp = 1024;
 };
+
+void CentralizingWeakCache::setSizeMaxOfObsoleteStack(ushort nb)
+{
+    _sizeMaxOfObsoleteStack = nb;
+}
 
 
 
